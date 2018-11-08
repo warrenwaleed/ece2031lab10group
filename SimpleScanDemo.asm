@@ -240,7 +240,7 @@ FW2:					; look for longest wall
 	;			wallLength = 360 + wallLength									::  7
 	;		}																	::  8
 	;		if (wallLength > LongestWallLength) {								::  9
-	;			LongestWallStartIndex = wallLength								:: 10
+	;			LongestWallLength = wallLength									:: 10
 	;			LongestWallStartIndex = CurrentWallStartIndex					:: 11
 	;		}																	:: 12
 	;	} else if (abs(PreviousDistance - currentDistance) < MaxDistDelta) {	:: 13
