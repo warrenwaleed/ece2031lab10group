@@ -253,7 +253,7 @@ FW2:					; look for longest wall
 	;			wallLength = 360 + wallLength									:: 20
 	;		}																	:: 21
 	;		if (wallLength > LongestWallLength) {								:: 22
-	;			LongestWallStartIndex = wallLength								:: 23
+	;			LongestWallLength = wallLength									:: 23
 	;			LongestWallStartIndex = CurrentWallStartIndex					:: 24
 	;		}																	:: 25
 	;		CurrentWallStartIndex = ArrayIndex									:: 26
