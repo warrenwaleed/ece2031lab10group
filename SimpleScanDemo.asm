@@ -94,6 +94,9 @@ Main:
 	; the angle into the "desired theta" variable.
 	STORE  DTheta
 
+	; START USER CODE
+	
+	; END USER CODE
 InfLoop: 
 	JUMP   InfLoop
 	; note that the movement API will still be running during this
@@ -205,7 +208,95 @@ FCDone:
 	CloseIndex: DW 0
 	CloseVal:   DW 0
 
+; FindWall
+FindWall:
+	LOADI  DataArray   ; get the array start address
+	STORE  ArrayIndex
 
+FWFindStart:			; find location with distance 0
+	ILOAD	ArrayIndex
+	JZERO	FW1
+	LOAD	ArrayIndex
+	ADDI	1
+	STORE	ArrayIndex
+	JUMP	FWFindStart
+FW1:					; store LoopStart and ready main loop
+	LOAD	ArrayIndex
+	STORE	LoopStart
+	STORE	CurrentWallStartIndex
+	LOADI	0
+	STORE	LongestWallStartIndex
+	STORE	LongestWallLength
+	STORE	PreviousDistance
+FW2:					; look for longest wall
+	; if (PreviousDistance != 0) {												:: 0
+	;	get currentDistance														:: 
+	;	if (currentDistance == 0) {												:: 1
+	;		// Just exited wall													:: 
+	;		wallLength = ArrayIndex - CurrentWallStartIndex						:: 2
+	;		if (wallLength < 0) {												:: 3
+	;			// ArrayIndex has wrapped around								::
+	;			wallLength = 360 + wallLength									:: 4
+	;		}																	:: 
+	;		if (wallLength > LongestWallLength) {								:: 5
+	;			LongestWallStartIndex = wallLength								:: 6
+	;			LongestWallStartIndex = CurrentWallStartIndex					:: 7
+	;		}																	::
+	;	} else if (abs(PreviousDistance - currentDistance) < MaxDistDelta) {	:: 8
+	;		// Still in wall													::
+	;	} else {																:: 9
+	;		// break in wall													:: 10
+	;		wallLength = ArrayIndex - CurrentWallStartIndex						:: 11
+	;		if (wallLength < 0) {												:: 12
+	;			// ArrayIndex has wrapped around
+	;			wallLength = 360 + wallLength									:: 13
+	;		}
+	;		if (wallLength > LongestWallLength) {								:: 14
+	;			LongestWallStartIndex = wallLength								:: 15
+	;			LongestWallStartIndex = CurrentWallStartIndex					:: 16
+	;		}
+	;		CurrentWallStartIndex = ArrayIndex									:: 17
+	;	}
+	; } else if (currentDistance > 0) {											:: 18
+	;	// Just entered wall
+	;	CurrentWallStartIndex = ArrayIndex										:: 19
+	; }																			::
+	; save currentDistance as PreviousDistance									:: 20
+	STORE  CloseIndex  ; keep track of shortest distance
+	ADDI   360
+	STORE  EndIndex
+	ILOAD  ArrayIndex  ; get the first entry of array
+	STORE  CloseVal    ; keep track of shortest distance
+FCLoop:
+	LOAD   ArrayIndex
+	ADDI   1
+	STORE  ArrayIndex  ; move to next entry
+	XOR    EndIndex    ; compare with end index
+	JZERO  FCDone
+	ILOAD  ArrayIndex  ; get the data
+	SUB    CloseVal    ; compare with current min
+	JPOS   FCLoop      ; not closer; move on
+	ILOAD  ArrayIndex  ; new minimum
+	STORE  CloseVal
+	LOAD   ArrayIndex
+	STORE  CloseIndex
+	JUMP   FCLoop
+FCDone:
+	; Need to convert the index to an angle.
+	; Since the data is stored according to angle,
+	; that means we just need the value position.
+	LOADI  DataArray   ; start address
+	SUB    CloseIndex  ; start address - entry address
+	CALL   Neg         ; entry address - start address
+	RETURN
+	
+	LoopStart:		DW 0
+	LongestWallStartIndex:	DW 0
+	LongestWallLength: 	DW 0
+	CurrentWallStartIndex:	DW 0
+	PreviousDistance:		DW 0
+MaxDistDelta:	EQU	40
+	
 
 Die:
 ; Sometimes it's useful to permanently stop execution.
