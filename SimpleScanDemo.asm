@@ -229,39 +229,49 @@ FW1:					; store LoopStart and ready main loop
 	STORE	LongestWallLength
 	STORE	PreviousDistance
 FW2:					; look for longest wall
-	; if (PreviousDistance != 0) {												:: 0
-	;	get currentDistance														:: 
-	;	if (currentDistance == 0) {												:: 1
-	;		// Just exited wall													:: 
-	;		wallLength = ArrayIndex - CurrentWallStartIndex						:: 2
-	;		if (wallLength < 0) {												:: 3
-	;			// ArrayIndex has wrapped around								::
-	;			wallLength = 360 + wallLength									:: 4
-	;		}																	:: 
-	;		if (wallLength > LongestWallLength) {								:: 5
-	;			LongestWallStartIndex = wallLength								:: 6
-	;			LongestWallStartIndex = CurrentWallStartIndex					:: 7
-	;		}																	::
-	;	} else if (abs(PreviousDistance - currentDistance) < MaxDistDelta) {	:: 8
-	;		// Still in wall													::
-	;	} else {																:: 9
-	;		// break in wall													:: 10
-	;		wallLength = ArrayIndex - CurrentWallStartIndex						:: 11
-	;		if (wallLength < 0) {												:: 12
-	;			// ArrayIndex has wrapped around
-	;			wallLength = 360 + wallLength									:: 13
-	;		}
-	;		if (wallLength > LongestWallLength) {								:: 14
-	;			LongestWallStartIndex = wallLength								:: 15
-	;			LongestWallStartIndex = CurrentWallStartIndex					:: 16
-	;		}
-	;		CurrentWallStartIndex = ArrayIndex									:: 17
-	;	}
-	; } else if (currentDistance > 0) {											:: 18
-	;	// Just entered wall
-	;	CurrentWallStartIndex = ArrayIndex										:: 19
-	; }																			::
-	; save currentDistance as PreviousDistance									:: 20
+	; Start:
+	; if (PreviousDistance != 0) {												::  0
+	;	get currentDistance														::  1
+	;	if (currentDistance == 0) {												::  2
+	;		// Just exited wall													::  3
+	;		wallLength = ArrayIndex - CurrentWallStartIndex						::  4
+	;		if (wallLength < 0) {												::  5
+	;			// ArrayIndex has wrapped around								::  6
+	;			wallLength = 360 + wallLength									::  7
+	;		}																	::  8
+	;		if (wallLength > LongestWallLength) {								::  9
+	;			LongestWallStartIndex = wallLength								:: 10
+	;			LongestWallStartIndex = CurrentWallStartIndex					:: 11
+	;		}																	:: 12
+	;	} else if (abs(PreviousDistance - currentDistance) < MaxDistDelta) {	:: 13
+	;		// Still in wall													:: 14
+	;	} else {																:: 15
+	;		// break in wall													:: 16
+	;		wallLength = ArrayIndex - CurrentWallStartIndex						:: 17
+	;		if (wallLength < 0) {												:: 18
+	;			// ArrayIndex has wrapped around								:: 19
+	;			wallLength = 360 + wallLength									:: 20
+	;		}																	:: 21
+	;		if (wallLength > LongestWallLength) {								:: 22
+	;			LongestWallStartIndex = wallLength								:: 23
+	;			LongestWallStartIndex = CurrentWallStartIndex					:: 24
+	;		}																	:: 25
+	;		CurrentWallStartIndex = ArrayIndex									:: 26
+	;	}																		:: 27
+	; } else if (currentDistance > 0) {											:: 28
+	;	// Just entered wall													:: 29
+	;	CurrentWallStartIndex = ArrayIndex										:: 30
+	; }																			:: 31
+	; save currentDistance as PreviousDistance									:: 32
+	; ArrayIndex += 1															:: 33
+	; if (ArrayIndex - DataArray == 360) {										:: 34
+	;	ArrayIndex = DataArray													:: 35
+	; }																			:: 36
+	; if (ArrayIndex == StartIndex) {											:: 37
+	; 	break loop;																:: 38
+	; } else {																	:: 39
+	; 	loop Start																:: 40
+	; }																			:: 41
 	STORE  CloseIndex  ; keep track of shortest distance
 	ADDI   360
 	STORE  EndIndex
