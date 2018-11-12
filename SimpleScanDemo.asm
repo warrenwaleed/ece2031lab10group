@@ -87,8 +87,9 @@ Main:
 	; execute CLI &B0010 to disable the timer interrupt.
 
 	; FindClosest returns the angle to the closest object
-	CALL   FindClosest
-	OUT    SSEG2       ; useful debugging info
+	; CALL   FindClosest
+	CALL	FindWall
+	;OUT    SSEG2       ; useful debugging info
 	
 	; To turn to that angle using the movement API, just store
 	; the angle into the "desired theta" variable.
@@ -223,11 +224,12 @@ FWFindStart:			; find location with distance 0
 FW1:					; store LoopStart and ready main loop
 	LOAD	ArrayIndex
 	STORE	LoopStart
-	STORE	CurrentWallStartIndex
 	LOADI	0
 	STORE	LongestWallStartIndex
 	STORE	LongestWallLength
+	STORE	CurrentWallStartIndex
 	STORE	PreviousDistance
+	STORE	NumberOfWalls
 FW2:					; look for longest wall
 	; Start:
 	; if (PreviousDistance != 0) {												::  0
@@ -243,21 +245,7 @@ FW2:					; look for longest wall
 	;			LongestWallLength = wallLength									:: 10
 	;			LongestWallStartIndex = CurrentWallStartIndex					:: 11
 	;		}																	:: 12
-	;	} else if (abs(PreviousDistance - currentDistance) < MaxDistDelta) {	:: 13
-	;		// Still in wall													:: 14
-	;	} else {																:: 15
-	;		// break in wall													:: 16
-	;		wallLength = ArrayIndex - CurrentWallStartIndex						:: 17
-	;		if (wallLength < 0) {												:: 18
-	;			// ArrayIndex has wrapped around								:: 19
-	;			wallLength = 360 + wallLength									:: 20
-	;		}																	:: 21
-	;		if (wallLength > LongestWallLength) {								:: 22
-	;			LongestWallLength = wallLength									:: 23
-	;			LongestWallStartIndex = CurrentWallStartIndex					:: 24
-	;		}																	:: 25
-	;		CurrentWallStartIndex = ArrayIndex									:: 26
-	;	}																		:: 27
+	;	} 																		:: 27
 	; } else if (currentDistance > 0) {											:: 28
 	;	// Just entered wall													:: 29
 	;	CurrentWallStartIndex = ArrayIndex										:: 30
@@ -267,44 +255,104 @@ FW2:					; look for longest wall
 	; if (ArrayIndex - DataArray == 360) {										:: 34
 	;	ArrayIndex = DataArray													:: 35
 	; }																			:: 36
-	; if (ArrayIndex == StartIndex) {											:: 37
+	; if (ArrayIndex == LoopStart {												:: 37
 	; 	break loop;																:: 38
 	; } else {																	:: 39
 	; 	loop Start																:: 40
 	; }																			:: 41
-	STORE  CloseIndex  ; keep track of shortest distance
-	ADDI   360
-	STORE  EndIndex
-	ILOAD  ArrayIndex  ; get the first entry of array
-	STORE  CloseVal    ; keep track of shortest distance
-FCLoop:
-	LOAD   ArrayIndex
-	ADDI   1
-	STORE  ArrayIndex  ; move to next entry
-	XOR    EndIndex    ; compare with end index
-	JZERO  FCDone
-	ILOAD  ArrayIndex  ; get the data
-	SUB    CloseVal    ; compare with current min
-	JPOS   FCLoop      ; not closer; move on
-	ILOAD  ArrayIndex  ; new minimum
-	STORE  CloseVal
-	LOAD   ArrayIndex
-	STORE  CloseIndex
-	JUMP   FCLoop
-FCDone:
-	; Need to convert the index to an angle.
-	; Since the data is stored according to angle,
-	; that means we just need the value position.
-	LOADI  DataArray   ; start address
-	SUB    CloseIndex  ; start address - entry address
-	CALL   Neg         ; entry address - start address
-	RETURN
 	
+	; ::  0
+	LOAD	PreviousDistance
+	JZERO	FW3
+	; ::  1
+	ILOAD	ArrayIndex
+	; ::  2
+	JZERO 	FW6
+	JUMP	FW5
+FW6:
+	; ::  4
+	LOAD	ArrayIndex
+	SUB		CurrentWallStartIndex
+	; ::  5
+	JNEG	FW8
+	JUMP	FW9
+FW8:
+	; ::  7
+	ADDI	360
+FW9:
+	; ::  9
+	SUB		LongestWallLength
+	JPOS	FW10
+	JUMP	FW5
+FW10:
+	; :: 10
+	ADD		LongestWallLength
+	STORE	LongestWallLength
+	; :: 11
+	LOAD	CurrentWallStartIndex
+	STORE	LongestWallStartIndex
+	; :: 12
+	JUMP	FW5
+FW3:
+	; :: 28
+	ILOAD	ArrayIndex
+	JPOS	FW4
+	JUMP	FW5
+FW4:
+	; :: 29
+	; :: 30
+	LOAD	NumberOfWalls	; DEBUG
+	ADDI	1				; DEBUG
+	STORE	NumberOfWalls	; DEBUG
+	LOAD	ArrayIndex
+	STORE	CurrentWallStartIndex
+
+FW5:
+	; :: 32
+	ILOAD	ArrayIndex
+	STORE	PreviousDistance
+	; :: 33
+	LOAD	ArrayIndex
+	ADDI	1
+	STORE	ArrayIndex
+	; :: 34
+	LOADI	DataArray
+	SUB		ArrayIndex
+	SUB		DataArray
+	ADDI	360
+	JZERO	FW18
+	JUMP	FW19
+FW18:
+	; :: 35
+	LOADI	DataArray
+	STORE	ArrayIndex
+FW19:
+	; :: 37
+	LOAD	ArrayIndex
+	SUB		LoopStart
+	JZERO	FW20
+	JUMP	FW21
+FW20:
+	; :: 38
+	JUMP	FW22
+FW21:
+	; :: 40
+	JUMP	FW2
+FW22:
+	; debug
+	LOAD	LongestWallLength
+	OUT   	SSEG2
+	LOAD	NumberOfWalls
+	OUT		SSEG1
+	; cleanup and return
+	LOAD	LongestWallStartIndex
+	RETURN	
 	LoopStart:		DW 0
 	LongestWallStartIndex:	DW 0
 	LongestWallLength: 	DW 0
 	CurrentWallStartIndex:	DW 0
 	PreviousDistance:		DW 0
+	NumberOfWalls:			DW 0	; DEBUG
 MaxDistDelta:	EQU	40
 	
 
